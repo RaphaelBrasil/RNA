@@ -51,7 +51,15 @@ def selecao_base(tipo, Y):
         Y[Y == 'Iris-versicolor'] = 1
         return Y
 
+def normaliza(X):
+    for i in range(X.shape[1]):
+        max_ = max(X[:, i])
+        min_ = min(X[:, i])
 
+        for j in range(X.shape[0]):
+            X[j, i] = (X[j, i] - min_) / (max_ - min_)
+
+    return X
 
 
 # Carregar os dados
@@ -65,7 +73,14 @@ dataset = pandas.read_csv(url, names=names)
 # Embaralha e divide os dados em treinamento e teste
 array = dataset.values
 X = array[:,0:4]
-Y = array[:,4]
+print('X Antes: ')
+print(X)
+
+X = normaliza(X)
+print('X Depois: ')
+print(X)
+
+Y = array[:, 4]
 validation_size = 0.20
 X_treino, X_teste, Y_treino, Y_teste = model_selection.train_test_split(X, Y, test_size=validation_size)
 
