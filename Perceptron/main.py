@@ -1,11 +1,7 @@
 import numpy as np
 import pandas
 from sklearn import model_selection
-from mlxtend.plotting import plot_decision_regions
 import matplotlib.pyplot as plt
-from sklearn import datasets
-from sklearn.svm import SVC
-
 
 def linhas(x):  # Retorna a quantidade de linhas em uma matriz
     return x.shape[0]
@@ -15,23 +11,16 @@ def colunas(x):  # Retorna a quantidade de colunas em ums matriz
     return x.shape[1]
 
 
-def calc_erro(t_iteration):
-    return Y_treino[t_iteration] - predict(t_iteration, 1)  # O u[0] é chamado para pegar o elemento dentro do array
+def calc_erro(linha, X_treino):
+    return Y_treino[linha] - predict(linha, X_treino)  # O u[0] é chamado para pegar o elemento dentro do array
 
 
-def calc_erro_teste(t_iteration):
-    return Y_teste[t_iteration] - predict(t_iteration, 0)
+def somatorio(linha, X_treino):
+    return X_treino[linha].dot(w_pesos_sinapticos)
 
 
-def degrau(t_iteration, treino):
-    if treino == 1:
-        return X_treino[t_iteration].dot(w_pesos_sinapticos)
-    else:
-        return X_teste[t_iteration].dot(w_pesos_sinapticos)
-
-
-def predict(t_iteration, treino):
-    return np.where(degrau(t_iteration, treino) >= 0.0, 1, 0)
+def predict(linha, X_treino):
+    return np.where(somatorio(linha, X_treino) >= 0.0, 1, 0) # Linha/ Base
 
 
 def selecao_base(tipo, Y):
@@ -72,7 +61,7 @@ dataset = pandas.read_csv(url, names=names)
 
 # Embaralha e divide os dados em treinamento e teste
 array = dataset.values
-X = array[:,0:4]
+X = array[:, [0, 2]] #X = array[:, 0:4] # X = array[:,0:4] # X = array[:, [0, 2]]  # Quantidade de atributos
 print('X Antes: ')
 print(X)
 
@@ -80,12 +69,15 @@ X = normaliza(X)
 print('X Depois: ')
 print(X)
 
+tipo = 0  # Define qual classe será vs Outras
+
+plot = 1  # Define se terá plot ou não
+
 Y = array[:, 4]
+Y = selecao_base(tipo, Y)
 validation_size = 0.20
 X_treino, X_teste, Y_treino, Y_teste = model_selection.train_test_split(X, Y, test_size=validation_size)
 
-
-tipo = 2 # Define qual classe será vs Outras
 
 
 # Adiciona os valores de X0
@@ -94,9 +86,9 @@ X_treino = np.insert(X_treino, 0, -1, axis = 1)
 X_teste = np.insert(X_teste, 0, -1, axis = 1)
 
 
-Y_treino = selecao_base(tipo, Y_treino).T # Troca os nomes em string para 0 ou 1
+Y_treino = Y_treino.T # Troca os nomes em string para 0 ou 1
 
-Y_teste = selecao_base(tipo, Y_teste).T # Troca os nomes em string para 0 ou 1
+Y_teste = Y_teste.T # Troca os nomes em string para 0 ou 1
 
 n_taxa_de_aprendizado = 0.1
 
@@ -120,9 +112,9 @@ for realizacoes in range(qt_realizacoes):
 
         for t_iteration in range(linhas(X_treino)):
 
-            u = degrau(t_iteration, 1)  # Faz o somatório de WiXi (Σ)
+            u = somatorio(t_iteration, X_treino)  # Faz o somatório de WiXi (Σ)
 
-            erro = calc_erro(t_iteration)  # Faz o calculo de D - Y (A função de ativação é chamada aqui (Predict))
+            erro = calc_erro(t_iteration, X_treino)  # Faz o calculo de D - Y (A função de ativação é chamada aqui (Predict))
 
             for i in range(len(w_pesos_sinapticos)):
                 w_pesos_sinapticos[i] = [w_pesos_sinapticos[i] + n_taxa_de_aprendizado * erro * X_treino[t_iteration, i]] # Função de aprendizagem para cada Wi
@@ -144,16 +136,15 @@ print(w_pesos_sinapticos)
 #TESTE
 
 acerto = 0
-predicao = np.array(-1)  # Somente para iniciar a variavel, depois o -1 é excluido
+predicao = []  # Somente para iniciar a variavel, depois o -1 é excluido
 
 for t_iteration in range(linhas(X_teste)):
 
     # u = classificador(t_iteration, 0)  # Faz o somatório de WiXi (Σ) Predict
 
-    predicao = np.append(predicao, predict(t_iteration, 0))
+    predicao = np.append(predicao, predict(t_iteration, X_teste))
 
 
-predicao = np.delete(predicao, 0)
 print('Predição: ')
 print(predicao)
 print('Desejado: ')
@@ -190,3 +181,35 @@ print(matriz)
 print('--------------------------')
 
 
+if plot == 1:
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),
+                         np.arange(y_min, y_max, 0.1))
+
+    base = np.c_[xx.ravel(), yy.ravel()]
+    base = np.insert(base, 0, -1, axis = 1)
+
+    print(base)
+
+    f, axarr = plt.subplots(1, 1, sharex='col', sharey='row', figsize=(10, 8))
+
+    Z = []
+
+    for i in range(linhas(base)):
+        Z = np.append(Z, predict(i, base))
+
+    Z = Z.reshape(xx.shape)
+
+    axarr = plt.contourf(xx, yy, Z, alpha=0.7)
+    axarr = plt.scatter(X[:, 0], X[:, 1], c=Y,
+                                  s=20, edgecolor='k')
+
+    if tipo == 0:
+        axarr = plt.title('Setosa vs Outras')
+    if tipo == 1:
+        axarr = plt.title('Virginica vs Outras')
+    if tipo == 2:
+        axarr = plt.title('Versicolor vs Outras')
+
+    plt.show()
