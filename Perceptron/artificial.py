@@ -27,12 +27,7 @@ def artificial_data():
     dataset = np.array([[np.random.uniform(0, 0.5), y, 0] for y in np.random.uniform(0, 0.5, 10)])
     dataset = np.append(dataset, [[np.random.uniform(0, 0.5), y, 0] for y in np.random.uniform(7, 7.5, 10)], axis=0)
     dataset = np.append(dataset, [[np.random.uniform(3, 3.5), y, 0] for y in np.random.uniform(0, 0.5, 10)], axis=0)
-    plt.plot(dataset[:, 0], dataset[:, 1], 'ro')
     dataset = np.append(dataset, [[np.random.uniform(3, 3.5), y, 1] for y in np.random.uniform(7, 7.5, 10)], axis=0)
-    plt.plot(dataset[30:, 0], dataset[30:, 1], 'bo')
-
-    plt.axis([-1, 4, -1, 8])
-    #plt.show()
 
     return dataset, n_features
 
@@ -76,12 +71,7 @@ array = dataset
 print('Array Size: ')
 print(array)
 X = array[:, 0: 2] #X = array[:, 0:4] # X = array[:,0:4] # X = array[:, [0, 2]]  # Quantidade de atributos
-print('X Antes: ')
-print(X)
 
-X = normaliza(X)
-print('X Depois: ')
-print(X)
 
 tipo = 3  # Define qual classe será vs Outras
 
@@ -117,6 +107,10 @@ print('Pesos sinápticos iniciais randômicos: ')
 print(linhas(X_treino)) # Retorna a quantidade de elementos em um array de arrays
 print(w_pesos_sinapticos)
 
+acuracia = 0
+best_hit = 0
+hit_vet = []
+
 for realizacoes in range(qt_realizacoes):
 
     for t_epoca in range(qt_epocas):
@@ -127,13 +121,13 @@ for realizacoes in range(qt_realizacoes):
 
             u = somatorio(t_iteration, X_treino)  # Faz o somatório de WiXi (Σ)
 
-            erro = calc_erro(t_iteration, X_treino)  # Faz o calculo de D - Y (A função de ativação é chamada aqui (Predict))
+            erro = calc_erro(t_iteration, X_treino)  # Faz o calculo de D - Y (A função de ativação é chamada aqui)
 
             for i in range(len(w_pesos_sinapticos)):
-                w_pesos_sinapticos[i] = [w_pesos_sinapticos[i] + n_taxa_de_aprendizado * erro * X_treino[t_iteration, i]] # Função de aprendizagem para cada Wi
+                w_pesos_sinapticos[i] = [w_pesos_sinapticos[i] + n_taxa_de_aprendizado * erro * X_treino[
+                    t_iteration, i]]  # Função de aprendizagem para cada Wi
 
             if erro != 0:
-
                 qt_erros = qt_erros + 1
 
         if qt_erros == 0:
@@ -142,68 +136,67 @@ for realizacoes in range(qt_realizacoes):
             print(t_epoca)
             break
 
+    predicao = []
+
+    for t_iteration in range(linhas(X_teste)):
+        predicao = np.append(predicao, predict(t_iteration, X_teste))
+
+    # Cálculo dos hits
+    hit = 0
+    for interacao in range(Y_teste.size):
+        if predicao[interacao] == Y_teste[interacao]:
+            hit = hit + 1
+
+    hit_vet = np.append(hit_vet, ((hit * 100)) / Y_teste.size)
+
+    if hit > best_hit:
+        best_hit = hit
+        # Seleciona a melhor Matriz de confusão
+        matriz = np.zeros(shape=(2, 2))
+        for interacao in range(Y_teste.size):
+            if predicao[interacao] == Y_teste[interacao]:
+                if predicao[interacao] == 0:
+                    matriz[1, 1] += 1
+                else:
+                    matriz[0, 0] += 1
+            if predicao[interacao] != Y_teste[interacao]:
+                if predicao[interacao] == 0:
+                    matriz[1, 0] += 1
+                else:
+                    matriz[0, 1] += 1
+
+    acuracia = acuracia + hit
+
 print('Pesos Ajustados: ')
 print(w_pesos_sinapticos)
 
-
-#TESTE
-
-acerto = 0
-predicao = []  # Somente para iniciar a variavel, depois o -1 é excluido
-
-for t_iteration in range(linhas(X_teste)):
-
-    # u = classificador(t_iteration, 0)  # Faz o somatório de WiXi (Σ) Predict
-
-    predicao = np.append(predicao, predict(t_iteration, X_teste))
-
+# TESTE
 
 print('Predição: ')
 print(predicao)
 print('Desejado: ')
-print(Y_teste)
-
-# Cálculo da acurácia
-acuracia = 0
-for interacao in range(Y_teste.size):
-    if predicao[interacao] == Y_teste[interacao]:
-        acuracia = acuracia + 1
-
-# Matriz de confusão
-matriz = np.zeros(shape=(2, 2))
-for interacao in range(Y_teste.size):
-    if predicao[interacao] == Y_teste[interacao]:
-        if predicao[interacao] == 0:
-            matriz[1, 1] += 1
-        else:
-            matriz[0, 0] += 1
-    if predicao[interacao] != Y_teste[interacao]:
-        if predicao[interacao] == 0:
-            matriz[1, 0] += 1
-        else:
-            matriz[0, 1] += 1
-
 
 print('--------------------------')
 print('Acurácia: ')
-print(acuracia/Y_teste.size)
+print((acuracia / (Y_teste.size * qt_realizacoes) * 100))
+print(hit_vet.mean())
 
-print('Matriz de confusão: ')
+print('Melhor Matriz de confusão: ')
 print(matriz)
 
-print('--------------------------')
+print('Desvio Padrão: ')
+print(hit_vet.std())
 
+print('--------------------------')
 
 if plot == 1:
     x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
     y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),
-                         np.arange(y_min, y_max, 0.1))
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.009),
+                         np.arange(y_min, y_max, 0.009))
 
     base = np.c_[xx.ravel(), yy.ravel()]
-    base = np.insert(base, 0, -1, axis = 1)
-
-    print(base)
+    base = np.insert(base, 0, -1, axis=1)
 
     f, axarr = plt.subplots(1, 1, sharex='col', sharey='row', figsize=(10, 8))
 
@@ -216,7 +209,7 @@ if plot == 1:
 
     axarr = plt.contourf(xx, yy, Z, alpha=0.7)
     axarr = plt.scatter(X[:, 0], X[:, 1], c=Y,
-                                  s=20, edgecolor='k')
+                        s=20, edgecolor='k')
 
     if tipo == 0:
         axarr = plt.title('Setosa vs Outras')
@@ -224,7 +217,5 @@ if plot == 1:
         axarr = plt.title('Virginica vs Outras')
     if tipo == 2:
         axarr = plt.title('Versicolor vs Outras')
-    if tipo == 3:
-        axarr = plt.title('Artificial')
 
     plt.show()

@@ -62,14 +62,11 @@ dataset = pandas.read_csv(url, names=names)
 # Embaralha e divide os dados em treinamento e teste
 array = dataset.values
 X = array[:, [0, 2]] #X = array[:, 0:4] # X = array[:,0:4] # X = array[:, [0, 2]]  # Quantidade de atributos
-print('X Antes: ')
-print(X)
+
 
 X = normaliza(X)
-print('X Depois: ')
-print(X)
 
-tipo = 0  # Define qual classe será vs Outras
+tipo = 2  # Define qual classe será vs Outras
 
 plot = 1  # Define se terá plot ou não
 
@@ -92,7 +89,7 @@ Y_teste = Y_teste.T # Troca os nomes em string para 0 ou 1
 
 n_taxa_de_aprendizado = 0.1
 
-qt_epocas = 20
+qt_epocas = 200
 
 qt_realizacoes = 20
 
@@ -104,6 +101,10 @@ print('Pesos sinápticos iniciais randômicos: ')
 print(linhas(X_treino)) # Retorna a quantidade de elementos em um array de arrays
 print(w_pesos_sinapticos)
 
+acuracia = 0
+best_hit = 0
+hit_vet = []
+
 for realizacoes in range(qt_realizacoes):
 
     for t_epoca in range(qt_epocas):
@@ -114,7 +115,7 @@ for realizacoes in range(qt_realizacoes):
 
             u = somatorio(t_iteration, X_treino)  # Faz o somatório de WiXi (Σ)
 
-            erro = calc_erro(t_iteration, X_treino)  # Faz o calculo de D - Y (A função de ativação é chamada aqui (Predict))
+            erro = calc_erro(t_iteration, X_treino)  # Faz o calculo de D - Y (A função de ativação é chamada aqui)
 
             for i in range(len(w_pesos_sinapticos)):
                 w_pesos_sinapticos[i] = [w_pesos_sinapticos[i] + n_taxa_de_aprendizado * erro * X_treino[t_iteration, i]] # Função de aprendizagem para cada Wi
@@ -129,54 +130,59 @@ for realizacoes in range(qt_realizacoes):
             print(t_epoca)
             break
 
+    predicao = []
+
+    for t_iteration in range(linhas(X_teste)):
+
+        predicao = np.append(predicao, predict(t_iteration, X_teste))
+
+    # Cálculo dos hits
+    hit = 0
+    for interacao in range(Y_teste.size):
+        if predicao[interacao] == Y_teste[interacao]:
+            hit = hit + 1
+
+    hit_vet = np.append(hit_vet, ((hit*100))/Y_teste.size)
+
+    if hit > best_hit:
+        best_hit = hit
+        # Seleciona a melhor Matriz de confusão
+        matriz = np.zeros(shape=(2, 2))
+        for interacao in range(Y_teste.size):
+            if predicao[interacao] == Y_teste[interacao]:
+                if predicao[interacao] == 0:
+                    matriz[1, 1] += 1
+                else:
+                    matriz[0, 0] += 1
+            if predicao[interacao] != Y_teste[interacao]:
+                if predicao[interacao] == 0:
+                    matriz[1, 0] += 1
+                else:
+                    matriz[0, 1] += 1
+
+
+    acuracia = acuracia + hit
+
 print('Pesos Ajustados: ')
 print(w_pesos_sinapticos)
 
 
 #TESTE
 
-acerto = 0
-predicao = []  # Somente para iniciar a variavel, depois o -1 é excluido
-
-for t_iteration in range(linhas(X_teste)):
-
-    # u = classificador(t_iteration, 0)  # Faz o somatório de WiXi (Σ) Predict
-
-    predicao = np.append(predicao, predict(t_iteration, X_teste))
-
-
 print('Predição: ')
 print(predicao)
 print('Desejado: ')
-print(Y_teste)
-
-# Cálculo da acurácia
-acuracia = 0
-for interacao in range(Y_teste.size):
-    if predicao[interacao] == Y_teste[interacao]:
-        acuracia = acuracia + 1
-
-# Matriz de confusão
-matriz = np.zeros(shape=(2, 2))
-for interacao in range(Y_teste.size):
-    if predicao[interacao] == Y_teste[interacao]:
-        if predicao[interacao] == 0:
-            matriz[1, 1] += 1
-        else:
-            matriz[0, 0] += 1
-    if predicao[interacao] != Y_teste[interacao]:
-        if predicao[interacao] == 0:
-            matriz[1, 0] += 1
-        else:
-            matriz[0, 1] += 1
-
 
 print('--------------------------')
 print('Acurácia: ')
-print(acuracia/Y_teste.size)
+print((acuracia/(Y_teste.size * qt_realizacoes)* 100))
+print(hit_vet.mean())
 
-print('Matriz de confusão: ')
+print('Melhor Matriz de confusão: ')
 print(matriz)
+
+print('Desvio Padrão: ')
+print(hit_vet.std())
 
 print('--------------------------')
 
@@ -184,13 +190,12 @@ print('--------------------------')
 if plot == 1:
     x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
     y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),
-                         np.arange(y_min, y_max, 0.1))
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.009),
+                         np.arange(y_min, y_max, 0.009))
 
     base = np.c_[xx.ravel(), yy.ravel()]
     base = np.insert(base, 0, -1, axis = 1)
 
-    print(base)
 
     f, axarr = plt.subplots(1, 1, sharex='col', sharey='row', figsize=(10, 8))
 
