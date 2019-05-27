@@ -41,17 +41,13 @@ def artificial1gen():
     x = np.linspace(0, 1, 20)
     y = 3 * x + 1
     for i in range(len(y)):
-        y[i] += np.random.uniform(-1.0, 1.0)
+        y[i] += np.random.uniform(-0.2, 0.2)
 
     data = []
     for i, j in zip(x, y):
         data.append([i, j])
-    print('teste')
-    print(data)
     data = np.asarray(data)
     data = normaliza(data)
-    print('After normalize')
-    print(data)
     data = insertbias(data)
 
     return np.asarray(data)
@@ -82,6 +78,7 @@ def testdata():
 
 # Carregar os dados
 
+testdata()
 dataset = artificial1gen()
 
 
@@ -108,7 +105,7 @@ Y_teste = Y_teste.T # Troca os nomes em string para 0 ou 1
 
 n_taxa_de_aprendizado = 0.1
 
-qt_epocas = 200
+qt_epocas = 20
 
 qt_realizacoes = 20
 
@@ -206,19 +203,18 @@ print('--------------------------')
 plot =1
 if plot == 1:
     weights = w_pesos_sinapticos
-    # TODO
+    #TODO
     points = np.linspace(0, 1, 20)
     c_points = []
     for p in points:
         data = []
         if len(weights) == 3:
-            data = [-1, p, 1]
+            data = [-0.2, p, 0.2]
         c_points.append(data)
 
-    print(weights)
     c_points = np.array(c_points)
-    predict = np.dot(weights.T, c_points)
-    plt.scatter(points, predict, c='r')
-    #ax.scatter(points, points, predict, c='r', marker='o')
+    predict = np.dot(weights.T, c_points.T)
+    plt.scatter(points, predict, c='r', s=3)
+
 
 plt.show()
