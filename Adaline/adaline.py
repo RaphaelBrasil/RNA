@@ -107,7 +107,7 @@ def plotErro(error):
 # Carregar os dados
 
 
-base = 1
+base = 0
 array = np.asarray([])
 if base == 0:
     array = artificial2D()
@@ -168,6 +168,7 @@ for realizacoes in range(qt_realizacoes):
     rmse.append(np.sqrt(mse[realizacoes]))
     print('Para a realização:', realizacoes + 1, ' temos, MSE:', mse[realizacoes], 'RMSE: ', rmse[realizacoes])
 
+print('')
 print('Pesos Ajustados: ')
 print(w_pesos_sinapticos)
 
@@ -179,8 +180,6 @@ plotErro(erro_treinamento)
 
 #TESTE
 erro_teste =[]
-auxmin = 1000
-min = 0
 
 for i in X_teste:
     y = np.dot(w_pesos_sinapticos, i[0:len(i) - 1])
@@ -192,6 +191,6 @@ print('')
 print('Desvio Padrão: ', np.std(erro_teste))
 
 if base == 0:
-    plot2D(X, w_pesos_sinapticos.T)
+    plot2D(X_teste, w_pesos_sinapticos.T)
 elif base == 1:
-    plot3D(X, w_pesos_sinapticos.T)
+    plot3D(X_teste, w_pesos_sinapticos.T)
