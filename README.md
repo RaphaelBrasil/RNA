@@ -1,2 +1,2 @@
 # RNA
-Atividades vista na cadeira Redes Neurais Artificiais, no IFCE.
+Atividades realizadas na cadeira Redes Neurais Artificiais, no IFCE.
